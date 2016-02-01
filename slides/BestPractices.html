@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+
+    <title>Taming the Beast: AngularJS Best Practices</title>
+
+    <meta name="description" content="An Introduction to AngularJS Best Practices">
+    <meta name="author" content="Thomas Lincoln">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+    <link rel="stylesheet" href="reveal.js/css/reveal.css">
+    <link rel="stylesheet" href="reveal.js/css/theme/league.css" id="theme">
+
+    <!-- Code syntax highlighting -->
+    <link rel="stylesheet" href="reveal.js/lib/css/zenburn.css">
+
+    <!-- Printing and PDF exports -->
+    <script>
+        var link = document.createElement( 'link' );
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = window.location.search.match( /print-pdf/gi ) ? 'reveal.js/css/print/pdf.css' : 'reveal.js/css/print/paper.css';
+        document.getElementsByTagName( 'head' )[0].appendChild( link );
+    </script>
+</head>
+
+<body>
+
+<div class="reveal">
+
+    <div class="slides">
+        <section>
+            <h3>Taming the Beast</h3>
+            <h2>AngularJS Best Practices</h2>
+            <p>
+                <small>A 5AM Brownbag by <a href="mailto://tlincoln@5amsolutions.com">Thomas Lincoln</a></small>
+            </p>
+        </section>
+
+        <section>
+            <section>
+                <h2>Primary Components</h2>
+                <ol>
+                    <li>Controllers</li>
+                    <li>Directives</li>
+                    <li>Services</li>
+                </ol>
+            </section>
+
+            <section>
+                <h3>Controllers</h3>
+                <ol>
+                    <li>Bound to templates that form navigable views</li>
+                    <li>Interact with and manipulates the dom</li>
+                </ol>
+            </section>
+
+            <section>
+                <h3>Directives</h3>
+                <ol>
+                    <li>Extend templates with custom elements and attributes</li>
+                    <li>Has an internal scope that inherits from the parent</li>
+                </ol>
+            </section>
+
+            <section>
+                <h3>Services</h3>
+                <ol>
+                    <li>Business logic and external functions</li>
+                    <li>Singletons, independent from the page view</li>
+                </ol>
+            </section>
+        </section>
+
+        <section>
+            <section>
+                <h2>Controller-As Syntax</h2>
+                <ol>
+                    <li>Treat controllers like classes</li>
+                    <li>Assign a namespace in the template</li>
+                    <li>Nest scopes without getting lost</li>
+                </ol>
+            </section>
+            <section>
+                <h3>Controller-As: Declaration</h3>
+                <ol>
+                    <li>The controller is your model</li>
+                    <li>Set properties on <i>this</i> instead of $scope</li>
+                    <li>$scope is still accessible as an api</li>
+                </ol>
+                <pre><code class="hljs" data-trim contenteditable>
+app.controller('MainCtrl', function ($scope) {
+    this.title = 'Some title';
+    $scope.$on('SOME_EVENT', function (event, data) {...});
+});
+                </code></pre>
+            </section>
+            <section>
+                <h3>Controller-As: Templates</h3>
+                <p>Assign namespaces in your template</p>
+                <pre><code class="html" data-trim contenteditable>
+<div ng-controller="MainCtrl as main">
+    {{ main.title }}
+    <div ng-controller="AnotherCtrl as another">
+        {{ another.title }}
+        <div ng-controller="YetAnotherCtrl as yet">
+                {{ yet.title }}
+                {{ main.title }} <!-- reference the parent controller -->
+        </div>
+    </div>
+</div>
+                </code></pre>
+            </section>
+        </section>
+
+        <section>
+            <section>
+                <h2>Scope Creep</h2>
+                <ol>
+                    <li>Only use $scope to drive your view</li>
+                    <li>Avoid $scope.$parent </li>
+                    <li>Don't use $scope to make things accesible for tests</li>
+                    <li>Reconsider your architecture (should X be a service?)</li>
+                </ol>
+            </section>
+            <section>
+                <h2>Scope Inheritance</h2>
+                <p>Problem:</p>
+                <p>Setting {{variable}} in ng-switch doesn't update $scope.variable</p>
+                <pre><code class="html" data-trim contenteditable>
+<form name="myForm" ng-controller="ctrl">
+    <span data-ng-switch="show">
+        <input ng-switch-when="true" data-ng-model="variable" />
+    </span>
+    {{variable}}
+</form>
+                </code></pre>
+            </section>
+            <section>
+                <h2>Scope Inheritance</h2>
+                <p>Solution: use a model object</p>
+                <pre><code class="html" data-trim contenteditable>
+<form name="myForm" ng-controller="ctrl">
+    <span data-ng-switch="show">
+        <input ng-switch-when="true" ng-model="model.variable" />
+    </span>
+    {{model.variable}}
+</form>
+                </code></pre>
+
+                <ol>
+                    <li>$scope is meant to hold objects, not variables</li>
+                    <li>Binding breaks if passing variables</li>
+                    <li>Control statements like ng-switch create child scopes</li>
+                </ol>
+            </section>
+        </section>
+
+        <section>
+            <section>
+                <h2>Promises API</h2>
+                <p>Chaining promises</p>
+                <pre><code class="hljs" data-trim contenteditable>
+var retrieve = function(){...};
+var process = function(){...};
+var download = function(){...};
+
+retrieve().then(process).then(download);
+                </code></pre>
+                <p>Error handling and cleanup</p>
+                <pre><code class="hljs" data-trim contenteditable>
+var process = function(){...};
+var reportError = function(){...};
+var cleanup = function(){...};
+
+process().catch(reportError)
+         .finally(cleanup);
+                </code></pre>
+            </section>
+            <section>
+                <h2>Promises API</h2>
+                <p>Grouping promises</p>
+
+                <pre><code class="hljs" data-trim contenteditable>
+var promise = $q.all([
+        getContent(template1),
+        getContent(template2),
+        getContent(template3)
+]);
+
+promise.then(function(resources) {
+    var template1 = resources[0].data;
+    var template2 = resources[1].data;
+    var template3 = resources[2].data;
+});
+                </code></pre>
+
+            </section>
+        </section>
+        <section>
+            <section>
+                <h2>Message Bus</h2>
+                <ol>
+                    <li>Announce to children with $broadcast()</li>
+                    <li>Announce to parents with $emit()</li>
+                    <li>Listen with $on()</li>
+                    <pre><code class="hljs" data-trim contenteditable>
+function Controller1($scope) {
+    $scope.$broadcast('GREET', 'John Smith');
+}
+
+function Controller2($scope) {
+    $scope.$on('GREET', function(name) {
+        console.log('Hello ' + name);
+    });
+}
+                    </code></pre>
+                </ol>
+            </section>
+                <section>
+                    <h2>Message Bus</h2>
+                    <p>Limit broadcasts by declaring a new scope</p>
+                        <pre><code class="hljs" data-trim contenteditable>
+module.service('notify',
+    function($rootScope) {
+        var scope =$rootScope.$new();
+        this.process = function() {
+            ...
+            scope.$broadcast('PROCESS_EVENT');
+        }
+        this.onProcess = function (callback) {
+            scope.$on('PROCESS_EVENT', callback});
+        };
+    }
+);
+                        </code></pre>
+                    </ol>
+                </section>
+        </section>
+        <section>
+            <section>
+                <h2>Test Injection</h2>
+                <ol>
+                    <li>Apply mocks with $provide</li>
+                    <li>Get instances with mock.inject</li>
+                </ol>
+            </section>
+            <section>
+                    <pre><code class="hljs" data-trim contenteditable>
+describe("Service A Unit Tests", function() {
+    var $q, ServiceA, MockB;
+
+    beforeEach(module(function ($provide) {
+        MockB = jasmine.createSpyObj('ServiceB',['submit'];
+        $provide.value('ServiceB', MockB);
+    }));
+
+    beforeEach(angular.mock.inject(function (_$q_, _ServiceA_) {
+        $q = _$q_;
+        ServiceA = _ServiceA_;
+    }));
+
+    it("should perform an action.", function () {
+        MockB.submit.and.returnValue('success');
+        ServiceA.performAction();
+        ...
+                    </code></pre>
+            </section>
+        </section>
+
+        <section>
+            <section>
+                <h2>Project Structure</h2>
+                <ol>
+                    <li>Directory per view, per component</li>
+                    <li>File per controller, directive, and service</li>
+                    <li>Use IIFE closures</li>
+                    <li>Angular methods above, classes and functions below</li>
+                </ol>
+            </section>
+            <section>
+                <h2>Directory Structure</h2>
+                <pre><code data-trim contenteditable>
+├── app
+│   ├── app.js
+│   ├── home
+│   │   ├── controllers
+│   │   ├── directives
+│   │   ├── filters
+│   │   └── services
+│   └── about
+│       ├── controllers
+│       ├── directives
+│       ├── filters
+│       └── services
+                </code></pre>
+            </section>
+            <section>
+                <h2>Code Structure</h2>
+                <pre><code class="hljs" data-trim contenteditable>
+(function() {
+    "use strict";
+    
+    angular
+        .module('app')
+        .controller('SomeController', SomeController);
+
+    function SomeController() {
+        ...
+    }
+
+    SomeController.prototype.performAction = function() {
+        ...
+    };
+
+    ...
+})();
+                </code></pre>
+            </section>
+        </section>
+        <section>
+            <section>
+                <h3>Recommended Modules</h3>
+                <ol>
+                    <li>ui-router</li>
+                    <li>ng-annotate</li>
+                    <li>ui.bootstrap</li>
+                </ol>
+            </section>
+            <section>
+                <h2>UI-Router</h2>
+                <ol>
+                    <li>Advanced routing with nested views</li>
+                    <li>Views defined by named states</li>
+                </ol>
+                <pre><code class="html" data-trim contenteditable>
+<div ui-view></div>
+<a ui-sref="state1">Route 1</a>
+<a ui-sref="state2">Route 2</a>
+                </code></pre>
+
+                <pre><code class="hljs" data-trim contenteditable>
+myApp.config(function($stateProvider, $urlRouterProvider) {
+    $urlRouterProvider.otherwise("/state1");
+    $stateProvider
+        .state('state1', {
+            url: "/state1",
+            templateUrl: "partials/state1.html"
+            controller: state1Controller
+        })
+        .state('state2', {
+            url: "/state2",
+            templateUrl: "partials/state2.html",
+            controller: state2Controller
+        }
+})
+                </code></pre>
+            </section>
+            <section>
+                <h2>NG-Annotate</h2>
+                <p>Preserves dependency names during minification.</p>
+                <p>Instead of</p>
+                <pre><code class="hljs" data-trim contenteditable>
+someModule.controller('MyController', ['$scope','dep1','dep2', MyController]);
+function MyController($scope, dep1, dep2) {
+    ...
+}
+                </code></pre>
+                <p>you can just</p>
+                <pre><code class="hljs" data-trim contenteditable>
+someModule.controller('MyController', MyController);
+function MyController($scope, dep1, dep2) {
+        ...
+}
+                </code></pre>
+            </section>
+        </section>
+        <section>
+            <h2>Best Practices</h2>
+            <ol>
+                <li>Use Angulars built in structures</li>
+                <li>Follow the Single Responsibility Principle</li>
+                <li>Use class structures and view models</li>
+                <li>Use recommended modules in the recommended way</li>
+                <li>Read the docs!</li>
+            </ol>
+        </section>
+        <section>
+            <h2>Resources</h2>
+            <ol>
+                <li>Core Concepts: <a href="https://docs.angularjs.org/guide/concepts">link</a></li>
+                <li>Todd Motto's Styleguide <a href="https://github.com/toddmotto/angular-styleguide">link</a></li>
+                <li>John Papa's Styleguide <a href="https://github.com/johnpapa/angular-styleguide">link</a></li>
+                <li>MV Meetup: Angular Best Practices <a href="https://www.youtube.com/watch?v=ZhfUv0spHCY">link</a></li>
+                <li>Controller-As Syntax: <a href="https://toddmotto.com/digging-into-angulars-controller-as-syntax/">link</a></li>
+            </ol>
+        </section>
+    </div>
+
+</div>
+
+<script src="reveal.js/lib/js/head.min.js"></script>
+<script src="reveal.js/js/reveal.js"></script>
+
+<script>
+    // Full list of configuration options available at:
+    // https://github.com/hakimel/reveal.js#configuration
+    Reveal.initialize({
+        controls: true,
+        progress: true,
+        history: true,
+        center: true,
+
+        transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+        // Optional reveal.js plugins
+        dependencies: [
+            { src: 'reveal.js/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+            { src: 'reveal.js/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+            { src: 'reveal.js/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+            { src: 'reveal.js/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+            { src: 'reveal.js/plugin/zoom-js/zoom.js', async: true },
+            { src: 'reveal.js/plugin/notes/notes.js', async: true }
+        ]
+    });
+
+</script>
+</body>
+</html>
