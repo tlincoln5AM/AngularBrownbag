@@ -48,7 +48,7 @@
                 <ol>
                     <li>Controllers</li>
                     <li>Directives</li>
-                    <li>Services</li>
+                    <li>Services & Factories</li>
                 </ol>
             </section>
 
@@ -56,23 +56,28 @@
                 <h3>Controllers</h3>
                 <ol>
                     <li>Bound to templates that form navigable views</li>
-                    <li>Interacts with and manipulates the dom</li>
+                    <li>Provides view models for the template</li>
                 </ol>
             </section>
 
             <section>
                 <h3>Directives</h3>
                 <ol>
-                    <li>Extend templates with custom elements and attributes</li>
-                    <li>Has an internal scope that inherits from the parent</li>
+                    <li>Extends templates with custom elements and attributes</li>
+                    <li>Manipulates the DOM</li>
                 </ol>
             </section>
 
             <section>
-                <h3>Services</h3>
+                <h3>Services & Factories</h3>
+                <ul style="list-style-type:none">
+                    <li>Service: instianted as singleton</li>
+                    <li>Factory: returns a singleton</li>
+                </ul>
+                <br><br>
                 <ol>
                     <li>Business logic and external functions</li>
-                    <li>Singletons, independent from the page view</li>
+                    <li>Independent from the page view</li>
                 </ol>
             </section>
         </section>
@@ -122,9 +127,8 @@ app.controller('MainCtrl', function ($scope) {
             <section>
                 <h2>Scope Creep</h2>
                 <ol>
-                    <li>Only use $scope to drive your view</li>
-                    <li>Avoid $scope.$parent </li>
-                    <li>Don't use $scope to make things accesible for tests</li>
+                    <li>Use <i>controller-as</i> to avoid $scope and $scope.$parent </li>
+                    <li>Don't use $scope just to make things accesible</li>
                     <li>Reconsider your architecture (should X be a service?)</li>
                 </ol>
             </section>
@@ -142,7 +146,6 @@ app.controller('MainCtrl', function ($scope) {
                 </code></pre>
             </section>
             <section>
-                <h2>Scope Inheritance</h2>
                 <p>Solution: use a model object</p>
                 <pre><code class="html" data-trim contenteditable>
 <form name="myForm" ng-controller="ctrl">
@@ -155,7 +158,7 @@ app.controller('MainCtrl', function ($scope) {
 
                 <ol>
                     <li>$scope is meant to hold objects, not variables</li>
-                    <li>Binding breaks if passing variables</li>
+                    <li>Inheritance breaks if passing variables</li>
                     <li>Control statements like ng-switch create child scopes</li>
                 </ol>
             </section>
@@ -208,7 +211,6 @@ promise.then(function(resources) {
                 <ol>
                     <li>Announce to children with $broadcast()</li>
                     <li>Announce to parents with $emit()</li>
-                    <li>Listen with $on()</li>
                     <pre><code class="hljs" data-trim contenteditable>
 function Controller1($scope) {
     $scope.$broadcast('GREET', 'John Smith');
@@ -278,7 +280,7 @@ describe("Service A Unit Tests", function() {
                 <h2>Project Structure</h2>
                 <ol>
                     <li>Directory per view, per component</li>
-                    <li>File per controller, directive, and service</li>
+                    <li>Separate files for each controller, directive, and service</li>
                     <li>Use IIFE closures</li>
                     <li>Angular methods above, classes and functions below</li>
                 </ol>
@@ -287,17 +289,20 @@ describe("Service A Unit Tests", function() {
                 <h2>Directory Structure</h2>
                 <pre><code data-trim contenteditable>
 ├── app
-│   ├── app.js
-│   ├── home
-│   │   ├── controllers
-│   │   ├── directives
-│   │   ├── filters
-│   │   └── services
-│   └── about
-│       ├── controllers
-│       ├── directives
-│       ├── filters
-│       └── services
+│   │   app.module.js
+│   │   app.config.js
+│   │   app.routes.js
+│   ├── directives
+│   │   │   navbar.js
+│   │   │   navbar.html
+│   ├── layout
+│   │   │   shell.html
+│   │   │   shell.controller.js
+│   │   │   topnav.html
+│   │   │   topnav.controller.js
+│   ├── people
+│   │   │   attendees.html
+│   │   │   attendees.controller.js
                 </code></pre>
             </section>
             <section>
@@ -305,7 +310,7 @@ describe("Service A Unit Tests", function() {
                 <pre><code class="hljs" data-trim contenteditable>
 (function() {
     "use strict";
-    
+
     angular
         .module('app')
         .controller('SomeController', SomeController);
@@ -363,20 +368,21 @@ myApp.config(function($stateProvider, $urlRouterProvider) {
             </section>
             <section>
                 <h2>NG-Annotate</h2>
-                <p>Preserves dependency names during minification.</p>
-                <p>Instead of</p>
+                <ol>
+                    <li>Avoids array notation providing safe minification.</li>
+                    <li>Inserts $inject for you.</li>
+                </ol>
+                <p>given</p>
                 <pre><code class="hljs" data-trim contenteditable>
-someModule.controller('MyController', ['$scope','dep1','dep2', MyController]);
-function MyController($scope, dep1, dep2) {
-    ...
-}
+/** @ngInject */
+someModule.controller('MyController', MyController);
+function MyController($scope, dep1, dep2) {...}
                 </code></pre>
-                <p>you can just</p>
+                <p>ng-annotate generates</p>
                 <pre><code class="hljs" data-trim contenteditable>
 someModule.controller('MyController', MyController);
-function MyController($scope, dep1, dep2) {
-        ...
-}
+MyController.$inject = ['$scope','dep1','dep2']
+function MyController($scope, dep1, dep2) {...}
                 </code></pre>
             </section>
         </section>
@@ -393,11 +399,11 @@ function MyController($scope, dep1, dep2) {
         <section>
             <h2>Resources</h2>
             <ol>
-                <li>Core Concepts: <a href="https://docs.angularjs.org/guide/concepts">link</a></li>
-                <li>Todd Motto's Styleguide <a href="https://github.com/toddmotto/angular-styleguide">link</a></li>
-                <li>John Papa's Styleguide <a href="https://github.com/johnpapa/angular-styleguide">link</a></li>
-                <li>MV Meetup: Angular Best Practices <a href="https://www.youtube.com/watch?v=ZhfUv0spHCY">link</a></li>
-                <li>Controller-As Syntax: <a href="https://toddmotto.com/digging-into-angulars-controller-as-syntax/">link</a></li>
+                <li>Core Concepts: <a href="https://docs.angularjs.org/guide/concepts" target=_new>link</a></li>
+                <li>Todd Motto's Styleguide <a href="https://github.com/toddmotto/angular-styleguide" target=_new>link</a></li>
+                <li>John Papa's Styleguide <a href="https://github.com/johnpapa/angular-styleguide" target=_new>link</a></li>
+                <li>MV Meetup: Angular Best Practices <a href="https://www.youtube.com/watch?v=ZhfUv0spHCY" target=_new>link</a></li>
+                <li>Controller-As Syntax: <a href="https://toddmotto.com/digging-into-angulars-controller-as-syntax/" target=_new>link</a></li>
             </ol>
         </section>
     </div>
